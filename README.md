@@ -412,114 +412,33 @@ SUPABASE_DB_URL=postgresql://...
 
 ## API Documentation
 
-### Authentication Endpoints
-
-#### Register
-```http
-POST /api/auth/register
-Content-Type: application/json
-
-{
-  "name": "John Doe",
-  "email": "john@example.com",
-  "password": "password123",
-  "phone": "+1-555-0100",
-  "department": "TECHNOLOGY",
-  "designation": "Software Engineer",
-  "profileImage": "data:image/jpeg;base64,..."
-}
-```
-
-#### Login
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "email": "john@example.com",
-  "password": "password123"
-}
-
-Response:
-{
-  "success": true,
-  "data": {
-    "user": { ... },
-    "token": "eyJhbGciOiJIUzI1NiIs..."
-  }
-}
-```
-
-### Employee Endpoints
-
-#### Get Hierarchy
-```http
-GET /api/employees/hierarchy
-Authorization: Bearer <token>
-
-Response:
-{
-  "success": true,
-  "data": {
-    "id": 1,
-    "name": "CEO Name",
-    "children": [ ... ]
-  }
-}
-```
-
-#### Get My Reporting Line
-```http
-GET /api/employees/:employeeId/path
-GET /api/employees/:employeeId/hierarchy
-Authorization: Bearer <token>
-```
-
-#### Update Manager
-```http
-PATCH /api/employees/:employeeId/manager
-Authorization: Bearer <token>
-Content-Type: application/json
-
-{
-  "managerId": 5
-}
-```
-
-### Department & Designation Endpoints
-
-#### Get Departments
-```http
-GET /api/designations/departments
-```
-
-#### Get Designations by Department
-```http
-GET /api/designations/department/:departmentCode
-```
+The complete API documentation is available via the Postman collection included in this repository.
 
 ### Import Postman Collection
-
-Import the included Postman collection for complete API documentation and testing:
 
 1. Open Postman
 2. Click "Import" button
 3. Select `EmpChartIO_API.postman_collection.json` from the project root
-4. The collection includes:
-   - All API endpoints with descriptions
-   - Auto-save authentication token
-   - Request examples
-   - Response documentation
+4. Start testing the APIs
 
-**Collection includes:**
+### What's Included
+
+The Postman collection contains comprehensive documentation for all endpoints:
+
 - **Auth** - Login, Register, Get Current User
 - **Hierarchy** - Full org hierarchy, employee subtree, path to CEO
 - **Employees** - CRUD operations, filters, search
-- **Manager Operations** - Update manager, get direct reports
+- **Manager Operations** - Update manager (drag & drop), get direct reports
 - **Statistics** - Employee analytics and metrics
 - **Designations & Departments** - Get teams and job titles
 
-**Base URL:** `http://localhost:3000/api`
+### Features
+
+- Auto-save authentication token after login
+- Request examples with sample data
+- Detailed response documentation
+- Validation rules and error handling
+- Base URL: `http://localhost:3000/api`
 
 ---
 
