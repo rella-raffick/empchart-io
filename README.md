@@ -232,10 +232,11 @@ empchartio/
 │   │   └── docker-compose.yml
 │   └── .env.example
 │
-├── setup-local.sh             # Automated local setup
-├── start-backend.sh           # Start backend server
-├── start-frontend.sh          # Start frontend server
-├── README.md                  # This file
+├── setup-local.sh                          # Automated local setup
+├── start-backend.sh                        # Start backend server
+├── start-frontend.sh                       # Start frontend server
+├── EmpChartIO_API.postman_collection.json  # Postman API collection
+├── README.md                               # This file
 └── FRONTEND_TECHNICAL_DOCUMENTATION.md
 ```
 
@@ -497,7 +498,28 @@ GET /api/designations/departments
 GET /api/designations/department/:departmentCode
 ```
 
-**Full API documentation:** See Postman collection (if available)
+### Import Postman Collection
+
+Import the included Postman collection for complete API documentation and testing:
+
+1. Open Postman
+2. Click "Import" button
+3. Select `EmpChartIO_API.postman_collection.json` from the project root
+4. The collection includes:
+   - All API endpoints with descriptions
+   - Auto-save authentication token
+   - Request examples
+   - Response documentation
+
+**Collection includes:**
+- **Auth** - Login, Register, Get Current User
+- **Hierarchy** - Full org hierarchy, employee subtree, path to CEO
+- **Employees** - CRUD operations, filters, search
+- **Manager Operations** - Update manager, get direct reports
+- **Statistics** - Employee analytics and metrics
+- **Designations & Departments** - Get teams and job titles
+
+**Base URL:** `http://localhost:3000/api`
 
 ---
 

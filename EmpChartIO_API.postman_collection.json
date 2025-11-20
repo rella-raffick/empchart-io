@@ -1,0 +1,602 @@
+{
+	"info": {
+		"name": "EmpChartIO - Employee Organization Chart API",
+		"description": "Complete API collection for EmpChartIO - Interactive Employee Organization Chart Management System\n\n## Base URL\nhttp://localhost:3000/api\n\n## Authentication\nAll endpoints (except auth/login and auth/register) require a JWT token in the Authorization header:\n```\nAuthorization: Bearer <token>\n```\n\n## Getting Started\n1. Run 'Login' request to get a JWT token (automatically saved to {{token}} variable)\n2. Use the token for all subsequent requests\n\n## API Documentation\n- Employee Routes: /api/employees\n- Auth Routes: /api/auth\n- Designation Routes: /api/designations\n\nUpdated: 2025-01-18 - Project renamed to EmpChartIO",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"description": "Authentication endpoints for user registration, login, and profile",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('token', response.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"joe.linux@empchartio.com\",\n  \"password\": \"EmpChartIO@123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate user and receive JWT token.\n\n**Request Body:**\n```json\n{\n  \"email\": \"string\" (required),\n  \"password\": \"string\" (required)\n}\n```\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"user\": {\n      \"id\": number,\n      \"email\": \"string\",\n      \"role\": \"ceo\" | \"L1\" | \"L2\" | \"L3\" | \"L4\" | \"L5\" | \"admin\",\n      \"department\": \"TECHNOLOGY\" | \"FINANCE\" | \"BUSINESS\" | \"EXECUTIVE\",\n      \"isActive\": boolean,\n      \"employeeId\": number | null\n    },\n    \"token\": \"string\" (JWT token)\n  },\n  \"message\": \"Login successful\"\n}\n```\n\n**Auto-save Token:**\nThis request automatically saves the token to {{token}} variable for use in other requests.\n\n**Validations:**\n- Email and password are required\n- Account must be active\n- Password must match\n\n**Rate Limit:** 5 requests per minute\n\n**Use Case:** User login to access the application"
+					},
+					"response": []
+				},
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Tharun Reddy\",\n  \"email\": \"tharun@empchartio.com\",\n  \"password\": \"EmpChartIO@123\",\n  \"department\": \"TECHNOLOGY\",\n  \"designation\": \"Senior Software Engineer\",\n  \"phone\": \"+1-555-0199\",\n  \"profileImage\": \"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						},
+						"description": "Register a new user and automatically create employee record.\n\n**Request Body:**\n```json\n{\n  \"name\": \"string\" (required) - Employee full name,\n  \"email\": \"string\" (required) - User email (must be unique),\n  \"password\": \"string\" (required) - Min 8 characters,\n  \"department\": \"string\" (required) - Department code (TECHNOLOGY, FINANCE, BUSINESS, EXECUTIVE),\n  \"designation\": \"string\" (required) - Job title from available designations,\n  \"phone\": \"string\" (required) - Phone number,\n  \"profileImage\": \"string\" (required) - Profile image as base64 data URI (e.g., data:image/png;base64,...)\n}\n```\n\n**What happens automatically:**\n- Level (L1-L5) is auto-assigned based on designation\n- Role is auto-assigned from level\n- Manager is auto-assigned based on department and level hierarchy\n- Employee record is created and linked to user account\n\n**Validations:**\n- Email must be unique and valid format\n- Password must be at least 8 characters\n- Designation must exist for the selected department\n- All required fields must be provided\n\n**Rate Limit:** 3 requests per minute\n\n**Use Case:** New employee onboarding with automatic org chart integration"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current User",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/auth/me",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"auth",
+								"me"
+							]
+						},
+						"description": "Get current authenticated user's profile information.\n\n**Authentication:**\nRequires Bearer token in Authorization header.\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"id\": number,\n    \"email\": \"string\",\n    \"role\": \"ceo\" | \"L1\" | \"L2\" | \"L3\" | \"L4\" | \"L5\" | \"admin\",\n    \"department\": \"TECHNOLOGY\" | \"FINANCE\" | \"BUSINESS\" | \"EXECUTIVE\",\n    \"isActive\": boolean,\n    \"employeeId\": number | null\n  }\n}\n```\n\n**Use Case:** Get logged-in user details, profile page, permission checks"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Hierarchy",
+			"description": "Organization hierarchy and reporting structure endpoints",
+			"item": [
+				{
+					"name": "Get Full Org Hierarchy",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/hierarchy",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"hierarchy"
+							]
+						},
+						"description": "Get complete organization hierarchy tree starting from CEO.\n\nReturns nested structure with:\n- All employees from CEO down\n- Full employee details (name, title, level, department)\n- Nested children (direct reports)\n- Cached for 5 minutes for performance\n\n**Use Case:** Display full org chart"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee Subtree",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/2/hierarchy",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"2",
+								"hierarchy"
+							]
+						},
+						"description": "Get hierarchy subtree for a specific employee.\n\n**Path Parameter:**\n- `id` (number): Employee ID\n\nReturns:\n- Employee and all subordinates (nested)\n- Full details for each person\n\n**Use Case:** View department/team structure under a specific manager"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee Path to CEO",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/14/path",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"14",
+								"path"
+							]
+						},
+						"description": "Get breadcrumb path from employee up to CEO.\n\n**Path Parameter:**\n- `id` (number): Employee ID\n\nReturns:\n- Array of employees from CEO → target employee\n- Shows reporting chain\n\n**Use Case:** Display breadcrumb navigation, show reporting line"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Employees",
+			"description": "Employee management endpoints (Read, Update, Delete)\n\n**IMPORTANT:** Employee creation is NOT available here.\nTo create a new employee, use POST /api/auth/register which creates both the User account and Employee record together.\n\nThis ensures:\n- Every employee has a user account\n- Proper data integrity\n- Automatic manager assignment\n- Auto-assigned roles and levels",
+			"item": [
+				{
+					"name": "Get All Employees",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees"
+							]
+						},
+						"description": "Get all employees with complete details.\n\nReturns:\n- All employees in the organization\n- Includes designation, department, manager, and direct reports\n- Ordered by name (ascending)\n\n**Use Case:** List all employees, populate dropdowns"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Employee By ID",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"1"
+							]
+						},
+						"description": "Get single employee by ID with full details.\n\n**Path Parameter:**\n- `id` (number): Employee ID\n\nReturns:\n- Employee details\n- Designation and department\n- Manager information\n- Direct reports\n\n**Use Case:** Employee profile page, detail view"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Employee",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"John Doe Updated\",\n  \"phone\": \"+1-555-9999\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/employees/50",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"50"
+							]
+						},
+						"description": "Update employee information (partial update).\n\n**Path Parameter:**\n- `id` (number): Employee ID\n\n**Request Body:** (all fields optional)\n```json\n{\n  \"name\": \"string\",\n  \"designationId\": number,\n  \"managerId\": number | null,\n  \"phone\": \"string\",\n  \"hireDate\": \"YYYY-MM-DD\",\n  \"profileImage\": \"URL\",\n  \"status\": \"active\" | \"inactive\"\n}\n```\n\n**Validations:**\n- New designation must be compatible with current manager's department\n- New manager must be in same department\n- No circular reporting using DAO.getAncestors()\n\n**Use Case:** Update employee details, change designation, reassign manager"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Employee",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/50",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"50"
+							]
+						},
+						"description": "Delete an employee.\n\n**Path Parameter:**\n- `id` (number): Employee ID\n\n**Validations:**\n- Employee must not have direct reports (reassign first)\n\n**Use Case:** Remove employee from organization"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Manager Operations",
+			"description": "Manager assignment and reporting structure operations",
+			"item": [
+				{
+					"name": "Update Employee Manager (Drag & Drop)",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"managerId\": 3\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/employees/49/manager",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"49",
+								"manager"
+							]
+						},
+						"description": "Update employee's manager (optimized for drag & drop in org chart).\n\n**Path Parameter:**\n- `id` (number): Employee ID to update\n\n**Request Body:**\n```json\n{\n  \"managerId\": number | null\n}\n```\n\n**Validations:**\n- Manager must exist and be in same department\n- No circular reporting (uses DAO.getAncestors())\n- CEO's manager cannot be changed\n- Employee cannot be their own manager\n\n**Use Case:** Drag & drop reassignment in org chart, manager change"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Direct Reports",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/2/reports",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"2",
+								"reports"
+							]
+						},
+						"description": "Get all direct reports for a specific manager.\n\n**Path Parameter:**\n- `id` (number): Manager's employee ID\n\nReturns:\n- Array of employees who report directly to this manager\n- Includes full employee details\n- Ordered by name (ascending)\n\n**Use Case:** View team members, manager dashboard"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Filters & Search",
+			"description": "Filter and search employees by various criteria",
+			"item": [
+				{
+					"name": "Filter by Department",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/filter/department?department=TECHNOLOGY",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"filter",
+								"department"
+							],
+							"query": [
+								{
+									"key": "department",
+									"value": "TECHNOLOGY",
+									"description": "Department code (TECHNOLOGY, FINANCE, BUSINESS, EXECUTIVE)"
+								}
+							]
+						},
+						"description": "Get all employees in a specific department.\n\n**Query Parameter:**\n- `department` (string): Department code\n  - TECHNOLOGY (Technology/Engineering)\n  - FINANCE (Finance)\n  - BUSINESS (Business Development)\n  - EXECUTIVE (Executive)\n\nReturns:\n- Array of employees in that department\n- Uses DAO layer for filtering\n\n**Use Case:** Department view, department statistics"
+					},
+					"response": []
+				},
+				{
+					"name": "Filter by Level",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/filter/level?level=L3",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"filter",
+								"level"
+							],
+							"query": [
+								{
+									"key": "level",
+									"value": "L3",
+									"description": "Employee level (L1, L2, L3, L4, L5)"
+								}
+							]
+						},
+						"description": "Get all employees at a specific level.\n\n**Query Parameter:**\n- `level` (string): Employee level\n  - L1 (C-Suite: CTO, CFO, CBO)\n  - L2 (VP/Director Level: Chief Officers, Managers)\n  - L3 (Team Lead Level: Lead Engineers, Team Leads)\n  - L4 (Senior Level: Senior Engineers, Senior Analysts)\n  - L5 (Individual Contributors: Engineers, Analysts)\n\nReturns:\n- Array of employees at that level\n- Uses DAO layer for filtering\n\n**Use Case:** Level-based analytics, compensation reviews"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Employees",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/search?search=john",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"search"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "john",
+									"description": "Search term (case-insensitive)"
+								}
+							]
+						},
+						"description": "Search employees by name (case-insensitive).\n\n**Query Parameter:**\n- `search` (string): Search term for employee name\n\nReturns:\n- Array of matching employees\n- Uses PostgreSQL ILIKE for case-insensitive search\n- Includes full employee details\n- Uses DAO.searchByName()\n\n**Use Case:** Employee lookup, autocomplete"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Statistics",
+			"description": "Employee statistics and analytics",
+			"item": [
+				{
+					"name": "Get Employee Stats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"description": "JWT token from login"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/employees/stats/overview",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"employees",
+								"stats",
+								"overview"
+							]
+						},
+						"description": "Get comprehensive employee statistics.\n\nReturns:\n```json\n{\n  \"total\": number,\n  \"byDepartment\": { \"ENG\": 25, \"SALES\": 15, ... },\n  \"byLevel\": { \"L1\": 2, \"L2\": 5, ... },\n  \"active\": number,\n  \"inactive\": number\n}\n```\n\n**Use Case:** Dashboard metrics, analytics, reporting"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Designations & Departments",
+			"description": "Designation and Department endpoints - now using database through DAO/Service layers\n\n**Updated Architecture:**\n- All data now comes from the database (not hardcoded)\n- Uses three-tier architecture: Controller → Service → DAO → Database\n- Supports dynamic designation and department management\n\n**Use Cases:**\n- Populate registration dropdowns\n- Get available job titles per department\n- Get department list",
+			"item": [
+				{
+					"name": "Get All Departments/Teams",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/designations/teams",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"designations",
+								"teams"
+							]
+						},
+						"description": "Get all departments/teams from the database.\n\n**No Authentication Required** - Public endpoint for registration form\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"data\": [\n    {\n      \"id\": 1,\n      \"code\": \"EXECUTIVE\",\n      \"name\": \"Executive\"\n    },\n    {\n      \"id\": 2,\n      \"code\": \"TECHNOLOGY\",\n      \"name\": \"Technology\"\n    },\n    {\n      \"id\": 3,\n      \"code\": \"FINANCE\",\n      \"name\": \"Finance\"\n    },\n    {\n      \"id\": 4,\n      \"code\": \"BUSINESS\",\n      \"name\": \"Business\"\n    }\n  ]\n}\n```\n\n**Data Source:** `departments` table via `departmentService.getAllDepartments()`\n\n**Rate Limit:** 10 requests per minute\n\n**Use Case:** Populate department dropdown in registration form"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Designations by Department/Team",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/designations/TECHNOLOGY",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"designations",
+								"TECHNOLOGY"
+							]
+						},
+						"description": "Get all designations (job titles) for a specific department from the database.\n\n**No Authentication Required** - Public endpoint for registration form\n\n**Path Parameter:**\n- `team` (string): Department code (EXECUTIVE, TECHNOLOGY, FINANCE, BUSINESS)\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"team\": \"TECHNOLOGY\",\n    \"designations\": [\n      {\n        \"id\": 13,\n        \"title\": \"Chief Technology Officer\",\n        \"level\": \"L1\"\n      },\n      {\n        \"id\": 20,\n        \"title\": \"Engineering Manager\",\n        \"level\": \"L2\"\n      },\n      {\n        \"id\": 25,\n        \"title\": \"Tech Lead\",\n        \"level\": \"L3\"\n      },\n      {\n        \"id\": 30,\n        \"title\": \"Senior Software Engineer\",\n        \"level\": \"L4\"\n      },\n      {\n        \"id\": 37,\n        \"title\": \"Software Engineer\",\n        \"level\": \"L5\"\n      }\n    ]\n  }\n}\n```\n\n**Fields:**\n- `id`: Designation ID (used when creating employee)\n- `title`: Job title display name\n- `level`: Organizational level (L1-L5)\n\n**Data Source:** `designations` table via `designationService.getDesignationsByDepartment()`\n\n**Sorted by:** Level (L1→L5), then Title (alphabetically)\n\n**Rate Limit:** 10 requests per minute\n\n**Use Case:** Populate designation dropdown after user selects department in registration form"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Designations (Grouped)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/designations",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"designations"
+							]
+						},
+						"description": "Get all designations grouped by department from the database.\n\n**No Authentication Required** - Public endpoint\n\n**Response:**\n```json\n{\n  \"success\": true,\n  \"data\": {\n    \"EXECUTIVE\": [\n      {\n        \"id\": 1,\n        \"title\": \"Chief Executive Officer\",\n        \"level\": \"L1\"\n      },\n      {\n        \"id\": 2,\n        \"title\": \"Executive Director\",\n        \"level\": \"L2\"\n      }\n    ],\n    \"TECHNOLOGY\": [\n      {\n        \"id\": 13,\n        \"title\": \"Chief Technology Officer\",\n        \"level\": \"L1\"\n      },\n      {\n        \"id\": 20,\n        \"title\": \"Engineering Manager\",\n        \"level\": \"L2\"\n      }\n    ],\n    \"FINANCE\": [...],\n    \"BUSINESS\": [...]\n  }\n}\n```\n\n**Fields:**\n- `id`: Designation ID\n- `title`: Job title\n- `level`: Organizational level (L1-L5)\n\n**Data Source:** `designations` table via `designationService.getDesignationsGroupedByDepartment()`\n\n**Sorted by:** Level (L1→L5), then Title (alphabetically) within each department\n\n**Rate Limit:** 5 requests per minute (more expensive query)\n\n**Use Case:** Pre-load all designations for offline form, caching, analytics"
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
