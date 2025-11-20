@@ -93,8 +93,11 @@ cd empchartio
 # Run the setup script
 ./setup-local.sh
 
-# Start development servers
-./start-dev.sh
+# Start backend (in one terminal)
+./start-backend.sh
+
+# Start frontend (in another terminal)
+./start-frontend.sh
 ```
 
 That's it! The application will be available at:
@@ -230,8 +233,8 @@ empchartio/
 │   └── .env.example
 │
 ├── setup-local.sh             # Automated local setup
-├── start-dev.sh               # Start dev servers
-├── stop-local.sh              # Stop local environment
+├── start-backend.sh           # Start backend server
+├── start-frontend.sh          # Start frontend server
 ├── README.md                  # This file
 └── FRONTEND_TECHNICAL_DOCUMENTATION.md
 ```
@@ -262,29 +265,24 @@ npm run lint         # Run ESLint
 
 #### Root Scripts
 ```bash
-./setup-local.sh     # Initial setup (run once)
-./start-dev.sh       # Start both backend and frontend
-./stop-local.sh      # Stop PostgreSQL and cleanup
+./setup-local.sh       # Initial setup (run once)
+./start-backend.sh     # Start backend server
+./start-frontend.sh    # Start frontend server
 ```
 
 ### Development Workflow
 
-1. **Start PostgreSQL** (if not already running):
+1. **Start Backend** (PostgreSQL will start automatically):
    ```bash
-   cd deployment && docker-compose up -d postgres
+   ./start-backend.sh
    ```
 
-2. **Start Backend**:
+2. **Start Frontend** (in new terminal):
    ```bash
-   cd backend && npm run dev
+   ./start-frontend.sh
    ```
 
-3. **Start Frontend** (in new terminal):
-   ```bash
-   cd frontend && npm run dev
-   ```
-
-4. **Access Application**:
+3. **Access Application**:
    - Frontend: http://localhost:5173
    - Backend API: http://localhost:3000
    - API Health Check: http://localhost:3000/health
