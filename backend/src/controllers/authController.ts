@@ -20,7 +20,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import authService from '../services/authService';
 import { Department } from '../types/enums';
-import { UserRole } from '../models/User';
 
 interface RegisterBody {
   name: string;
@@ -29,7 +28,7 @@ interface RegisterBody {
   department: Department;
   designation: string; // Job title from dropdown
   phone: string;
-  profileImage: string;
+  profileImage?: string; // Optional - default avatar will be used if not provided
 }
 
 interface LoginBody {
@@ -50,11 +49,11 @@ export class AuthController {
       const { name, email, password, department, designation, phone, profileImage } = request.body;
 
       // Validate required fields
-      if (!name || !email || !password || !department || !designation || !phone || !profileImage) {
+      if (!name || !email || !password || !department || !designation || !phone) {
         return reply.status(400).send({
           success: false,
           error: {
-            message: 'Name, email, password, department, designation, phone, and profile image are required',
+            message: 'Name, email, password, department, designation, and phone are required',
           },
         });
       }

@@ -20,4 +20,6 @@ export interface EmployeePath {
   designation: string;
   level: string;
   department: string;
+  departmentName: string;
+  profileImage?: string;
 }

@@ -1,18 +1,49 @@
 import { FastifyRequest, FastifyReply } from "fastify";
 import employeeService from "../services/employeeService";
+import cacheManager from "../utils/cacheManager";
+
+// Initialize cache with 5 minutes TTL (300 seconds)
+const CACHE_NAME = "employees";
+const CACHE_TTL = 300;
+cacheManager.getCache(CACHE_NAME, CACHE_TTL);
+
+/**
+ * Helper function to send response with cache header
+ */
+function sendWithCache(
+  reply: FastifyReply,
+  data: any,
+  cacheHit: boolean
+) {
+  return reply
+    .header('X-Cache', cacheHit ? 'HIT' : 'MISS')
+    .send({
+      success: true,
+      data,
+    });
+}
 
 class EmployeeController {
+  /**
+   * Clear cache after mutations
+   */
+  private clearCache() {
+    cacheManager.clearCache(CACHE_NAME);
+  }
+
   /**
    * Get all employees
    */
   async getAllEmployees(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const employees = await employeeService.getAllEmployees();
-      return reply.send({
-        success: true,
-        data: employees,
-      });
+      const result = await cacheManager.getOrSet(
+        CACHE_NAME,
+        "all_employees",
+        () => employeeService.getAllEmployees()
+      );
+      return sendWithCache(reply, result.data, result.cacheHit);
     } catch (error: any) {
+      console.error("Error in getAllEmployees:", error);
       return reply.status(500).send({
         success: false,
         error: error.message,
@@ -43,6 +74,7 @@ class EmployeeController {
         data: employee,
       });
     } catch (error: any) {
+      console.error("Error in getEmployeeById:", error);
       return reply.status(500).send({
         success: false,
         error: error.message,
@@ -55,19 +87,20 @@ class EmployeeController {
    */
   async getHierarchy(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const hierarchy = await employeeService.getOrganizationHierarchy();
+      const result = await cacheManager.getOrSet(
+        CACHE_NAME,
+        "full_hierarchy",
+        () => employeeService.getOrganizationHierarchy()
+      );
 
-      if (!hierarchy) {
+      if (!result.data) {
         return reply.status(404).send({
           success: false,
           error: "No organization hierarchy found (no CEO)",
         });
       }
 
-      return reply.send({
-        success: true,
-        data: hierarchy,
-      });
+      return sendWithCache(reply, result.data, result.cacheHit);
     } catch (error: any) {
       return reply.status(500).send({
         success: false,
@@ -85,12 +118,13 @@ class EmployeeController {
   ) {
     try {
       const employeeId = parseInt(request.params.id);
-      const subtree = await employeeService.getSubtreeHierarchy(employeeId);
+      const result = await cacheManager.getOrSet(
+        CACHE_NAME,
+        `subtree_${employeeId}`,
+        () => employeeService.getSubtreeHierarchy(employeeId)
+      );
 
-      return reply.send({
-        success: true,
-        data: subtree,
-      });
+      return sendWithCache(reply, result.data, result.cacheHit);
     } catch (error: any) {
       return reply.status(500).send({
         success: false,
@@ -149,6 +183,9 @@ class EmployeeController {
           : undefined,
       });
 
+      // Clear cache after update
+      this.clearCache();
+
       return reply.send({
         success: true,
         data: employee,
@@ -174,11 +211,16 @@ class EmployeeController {
     try {
       const employeeId = parseInt(request.params.id);
       const { managerId } = request.body;
+      const currentUser = (request as any).user;
 
       const employee = await employeeService.updateManager(
         employeeId,
-        managerId
+        managerId,
+        currentUser
       );
+
+      // Clear cache after update
+      this.clearCache();
 
       return reply.send({
         success: true,
@@ -203,6 +245,9 @@ class EmployeeController {
     try {
       const employeeId = parseInt(request.params.id);
       await employeeService.deleteEmployee(employeeId);
+
+      // Clear cache after delete
+      this.clearCache();
 
       return reply.send({
         success: true,

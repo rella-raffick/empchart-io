@@ -2,7 +2,7 @@ import { Model, DataTypes, Optional } from "sequelize";
 import sequelize from "../config/database";
 import Designation from "./Designation";
 
-interface EmployeeAttributes {
+export interface EmployeeAttributes {
   id: number;
   name: string;
   designationId: number;
@@ -15,7 +15,7 @@ interface EmployeeAttributes {
   updatedAt?: Date;
 }
 
-interface EmployeeCreationAttributes
+export interface EmployeeCreationAttributes
   extends Optional<
     EmployeeAttributes,
     | "id"
@@ -91,7 +91,7 @@ Employee.init(
       defaultValue: DataTypes.NOW,
     },
     profileImage: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.TEXT, // Changed from STRING(255) to TEXT for base64 images
       allowNull: true,
       field: "profile_image",
     },

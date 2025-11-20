@@ -1,6 +1,9 @@
 // Employee Levels
 export type EmployeeLevel = 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
 
+// User Roles
+export type UserRole = 'admin' | 'ceo' | 'L1' | 'L2' | 'L3' | 'L4' | 'L5';
+
 // Departments
 export type Department = 'EXECUTIVE' | 'TECHNOLOGY' | 'FINANCE' | 'BUSINESS';
 

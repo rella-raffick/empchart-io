@@ -3,13 +3,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const sequelize = new Sequelize({
-  host: process.env.DB_HOST || 'localhost',
-  port: parseInt(process.env.DB_PORT || '5432'),
-  database: process.env.DB_NAME || 'happy_fox_db',
-  username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'postgres',
+const supabaseDbUrl = process.env.SUPABASE_DB_URL;
+
+if (!supabaseDbUrl) {
+  throw new Error('SUPABASE_DB_URL environment variable is required. Get it from Supabase Dashboard > Project Settings > Database > Connection String');
+}
+
+const sequelize = new Sequelize(supabaseDbUrl, {
   dialect: 'postgres',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
+  },
   logging: process.env.NODE_ENV === 'development' ? console.log : false,
   pool: {
     max: 5,

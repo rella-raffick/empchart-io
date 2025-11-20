@@ -3,7 +3,7 @@ import sequelize from "../config/database";
 import { UserRole, Department } from "../types/enums";
 import Employee from "./Employee";
 
-interface UserAttributes {
+export interface UserAttributes {
   id: number;
   employeeId: number | null;
   email: string;
@@ -16,7 +16,7 @@ interface UserAttributes {
   updatedAt?: Date;
 }
 
-interface UserCreationAttributes
+export interface UserCreationAttributes
   extends Optional<
     UserAttributes,
     "id" | "employeeId" | "isActive" | "lastLogin" | "createdAt" | "updatedAt"
@@ -101,3 +101,4 @@ User.init(
 );
 
 export default User;
+export { UserRole } from "../types/enums";

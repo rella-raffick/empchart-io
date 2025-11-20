@@ -21,14 +21,13 @@
 import { Transaction } from 'sequelize';
 import authDao from '../dao/authDao';
 import employeeDao from '../dao/employeeDao';
+import designationDao from '../dao/designationDao';
+import departmentDao from '../dao/departmentDao';
 import sequelize from '../config/database';
-import Designation from '../models/Designation';
-import DepartmentModel from '../models/Department';
 import { hashPassword, comparePassword } from '../utils/password';
 import { generateToken, verifyToken } from '../utils/jwt';
 import { Department as DepartmentCode, EmployeeLevel } from '../types/enums';
 import { UserRole } from '../models/User';
-import { getLevelFromDesignation } from '../constants/designations';
 import { getValidManagerLevels, LEVEL_HIERARCHY } from '../utils/levelValidation';
 
 interface RegisterInput {
@@ -36,9 +35,9 @@ interface RegisterInput {
   email: string;
   password: string;
   department: DepartmentCode;
-  designation: string; // Job title from dropdown (e.g., "Senior Software Engineer")
+  designation: string;
   phone: string;
-  profileImage: string;
+  profileImage?: string;
 }
 
 interface LoginInput {
@@ -109,32 +108,25 @@ export class AuthService {
       throw new Error('Email already registered');
     }
 
-    const departmentRecord = await DepartmentModel.findOne({
-      where: { code: department },
-    });
+    // Get department using DAO
+    const departmentRecord = await departmentDao.findByCode(department);
 
     if (!departmentRecord) {
       throw new Error('Invalid department selected');
     }
 
-    const designationRecord = await Designation.findOne({
-      where: {
-        title: designation.trim(),
-        departmentId: departmentRecord.id,
-      },
-    });
+    // Get designation using DAO
+    const designationRecord = await designationDao.findByTitleAndDepartment(
+      designation.trim(),
+      departmentRecord.id
+    );
 
     if (!designationRecord) {
       throw new Error('Designation not found for the selected department');
     }
 
-    // Automatically map designation to level (L1-L5)
-    // Example: "Senior Software Engineer" + "TECHNOLOGY" → "L4"
-    const level =
-      (designationRecord.level as EmployeeLevel | undefined) ??
-      getLevelFromDesignation(designation, department);
+    const level = designationRecord.level as EmployeeLevel;
 
-    // Hash password
     const passwordHash = await hashPassword(password);
 
     const trimmedEmail = normalizedEmail;

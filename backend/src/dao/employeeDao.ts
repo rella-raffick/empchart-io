@@ -192,7 +192,7 @@ export class EmployeeDao {
     const MAX_DEPTH = 20; // Prevent infinite loops
 
     while (currentId !== null && depth < MAX_DEPTH) {
-      const employee = await Employee.findByPk(currentId, {
+      const employee: Employee | null = await Employee.findByPk(currentId, {
         attributes: ['id', 'managerId'],
       });
 
@@ -238,7 +238,8 @@ export class EmployeeDao {
   }
 
   /**
-   * Find potential managers in the same department by allowed levels
+   * Find potential managers by allowed levels
+   * Can optionally filter by department
    */
   async findManagersByLevels(
     departmentId: number,

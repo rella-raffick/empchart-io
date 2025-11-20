@@ -1,19 +1,22 @@
 import Designation from "../models/Designation";
 import Department from "../models/Department";
-import NodeCache from "node-cache";
 import { OrgChartNode, EmployeePath } from "../types/orgChart";
 import employeeDao from "../dao/employeeDao";
 
-// Cache for 5 minutes
-const hierarchyCache = new NodeCache({ stdTTL: 300 });
-
 class EmployeeService {
   /**
-   * Clear hierarchy cache (call after any employee update)
+   * Get all employees with their designations and departments
    */
-  private clearHierarchyCache(): void {
-    hierarchyCache.del("full_hierarchy");
-    hierarchyCache.del("ceo_id");
+  async getAllEmployees(): Promise<any[]> {
+    const employees = await employeeDao.findAll();
+    return employees;
+  }
+
+  /**
+   * Get employee by ID with full details
+   */
+  async getEmployeeById(id: number): Promise<any | null> {
+    return await employeeDao.findById(id);
   }
 
   /**
@@ -43,19 +46,6 @@ class EmployeeService {
     };
   }
 
-  /**
-   * Get all employees with their designations and departments
-   */
-  async getAllEmployees(): Promise<any[]> {
-    return await employeeDao.findAll();
-  }
-
-  /**
-   * Get employee by ID with full details
-   */
-  async getEmployeeById(id: number): Promise<any | null> {
-    return await employeeDao.findById(id);
-  }
 
   /**
    * Update an employee
@@ -91,20 +81,6 @@ class EmployeeService {
         throw new Error("Designation department not found");
       }
 
-      // If employee has a manager, check department compatibility
-      if (employee.managerId) {
-        const manager = await employeeDao.findById(employee.managerId);
-
-        if (manager && manager.designation && manager.designation.department) {
-          if (
-            designation.department.code !== manager.designation.department.code
-          ) {
-            throw new Error(
-              `Cannot change to designation in different department while having a manager. New designation is in ${designation.department.code}, manager is in ${manager.designation.department.code}`
-            );
-          }
-        }
-      }
     }
 
     // Validate manager if being updated
@@ -120,25 +96,27 @@ class EmployeeService {
           throw new Error("Manager not found");
         }
 
-        if (!manager.designation || !manager.designation.department) {
-          throw new Error("Manager designation or department not found");
+        if (!manager.designation) {
+          throw new Error("Manager designation not found");
         }
 
-        if (!employee.designation || !employee.designation.department) {
-          throw new Error("Employee designation or department not found");
+        if (!employee.designation) {
+          throw new Error("Employee designation not found");
         }
 
-        // Check if manager is in the same department
-        if (
-          employee.designation.department.code !==
-          manager.designation.department.code
-        ) {
+        const managerLevel = manager.designation.level;
+        const employeeLevel = employee.designation.level;
+        
+        const levelHierarchy: Record<string, number> = {
+          L1: 1, L2: 2, L3: 3, L4: 4, L5: 5
+        };
+        
+        if (levelHierarchy[managerLevel] >= levelHierarchy[employeeLevel]) {
           throw new Error(
-            `Manager must be in the same department. Employee is in ${employee.designation.department.code}, manager is in ${manager.designation.department.code}`
+            `Manager must be higher level than employee. Employee is ${employeeLevel}, manager is ${managerLevel}`
           );
         }
 
-        // Prevent circular reporting using DAO's ancestor detection
         const ancestors = await employeeDao.getAncestors(data.managerId);
         if (ancestors.includes(id)) {
           throw new Error("Circular reporting relationship detected");
@@ -147,9 +125,6 @@ class EmployeeService {
     }
 
     const updatedEmployee = await employeeDao.update(id, data);
-
-    // Clear cache
-    this.clearHierarchyCache();
 
     return updatedEmployee;
   }
@@ -173,9 +148,6 @@ class EmployeeService {
     }
 
     await employeeDao.delete(id);
-
-    // Clear cache
-    this.clearHierarchyCache();
   }
 
   /**
@@ -222,12 +194,6 @@ class EmployeeService {
    * Get organization hierarchy starting from CEO
    */
   async getOrganizationHierarchy(): Promise<OrgChartNode | null> {
-    // Check cache first
-    const cached = hierarchyCache.get<OrgChartNode>("full_hierarchy");
-    if (cached) {
-      return cached;
-    }
-
     // Find CEO (employee with no manager)
     const ceo = await this.getCEO();
 
@@ -239,9 +205,6 @@ class EmployeeService {
     const hierarchy = await this.buildHierarchy(ceo.id);
     const transformed = this.transformForOrgChart(hierarchy);
 
-    // Cache the result
-    hierarchyCache.set("full_hierarchy", transformed);
-
     return transformed;
   }
 
@@ -250,7 +213,9 @@ class EmployeeService {
    */
   async getSubtreeHierarchy(employeeId: number): Promise<OrgChartNode> {
     const employee = await this.buildHierarchy(employeeId);
-    return this.transformForOrgChart(employee);
+    const transformed = this.transformForOrgChart(employee);
+
+    return transformed;
   }
 
   /**
@@ -267,23 +232,17 @@ class EmployeeService {
       throw new Error("Employee not found");
     }
 
-    // Get direct reports
     const directReports = await employeeDao.getDirectReports(employeeId);
 
-    // Recursively build hierarchy for each direct report
     const directReportsWithHierarchy = await Promise.all(
       directReports.map((report: any) => this.buildHierarchy(report.id))
     );
 
-    // Attach direct reports to employee
     (employee as any).directReports = directReportsWithHierarchy;
 
     return employee;
   }
 
-  /**
-   * Get path from employee to CEO (breadcrumb trail)
-   */
   async getEmployeePath(employeeId: number): Promise<EmployeePath[]> {
     const path: EmployeePath[] = [];
     let currentEmployee = await employeeDao.findById(employeeId);
@@ -300,6 +259,8 @@ class EmployeeService {
         designation: currentEmployee.designation?.title || "Unknown",
         level: currentEmployee.designation?.level || "L5",
         department: currentEmployee.designation?.department?.code || "UNKNOWN",
+        departmentName: currentEmployee.designation?.department?.name || "Unknown",
+        profileImage: currentEmployee.profileImage,
       });
 
       if (currentEmployee.managerId === null) {
@@ -317,7 +278,8 @@ class EmployeeService {
    */
   async updateManager(
     employeeId: number,
-    managerId: number | null
+    managerId: number | null,
+    currentUser?: any
   ): Promise<any> {
     const employee = await employeeDao.findById(employeeId);
 
@@ -325,17 +287,14 @@ class EmployeeService {
       throw new Error("Employee not found");
     }
 
-    // Validation: Check if employee has designation and department
     if (!employee.designation || !employee.designation.department) {
       throw new Error("Employee designation or department not found");
     }
 
-    // Can't change CEO's manager
     if (employee.managerId === null && managerId !== null) {
       throw new Error("Cannot assign a manager to CEO");
     }
 
-    // If setting a manager (not removing)
     if (managerId !== null) {
       if (typeof managerId !== "number" || Number.isNaN(managerId)) {
         throw new Error("Invalid manager id");
@@ -347,45 +306,56 @@ class EmployeeService {
         throw new Error("Manager not found");
       }
 
-      // Validation: Check if manager has designation and department
       if (!newManager.designation || !newManager.designation.department) {
         throw new Error("Manager designation or department not found");
       }
 
-      // Check if manager is in the same department
-      const employeeDeptCode = employee.designation.department.code;
-      const managerDeptCode = newManager.designation.department.code;
+      const managerLevel = newManager.designation.level;
+      const employeeLevel = employee.designation.level;
 
-      if (employeeDeptCode !== managerDeptCode) {
+      const levelHierarchy: Record<string, number> = {
+        L1: 1, L2: 2, L3: 3, L4: 4, L5: 5
+      };
+
+      if (levelHierarchy[managerLevel] >= levelHierarchy[employeeLevel]) {
         throw new Error(
-          `Cannot assign manager from different department. Employee is in ${employeeDeptCode}, manager is in ${managerDeptCode}`
+          `Manager must be higher level than employee. Employee is ${employeeLevel}, manager is ${managerLevel}`
         );
       }
 
-      // Prevent self-reporting
       if (managerId === employeeId) {
         throw new Error("Employee cannot be their own manager");
       }
 
-      // Use DAO's getAncestors to check for circular reference in the hierarchy
       const ancestors = await employeeDao.getAncestors(managerId);
       if (ancestors.includes(employeeId)) {
         throw new Error("This would create a circular reporting structure");
       }
+
+      // Check if current user has permission to perform this reassignment
+      if (currentUser && currentUser.role) {
+        const { canReassignToManager, roleToLevel } = await import('../utils/levelValidation');
+        const userLevel = roleToLevel(currentUser.role);
+
+        const canReassign = canReassignToManager(
+          userLevel,
+          employeeLevel as any,
+          managerLevel as any
+        );
+
+        if (!canReassign) {
+          throw new Error(
+            `You do not have permission to reassign ${employeeLevel} employees to ${managerLevel} managers. ` +
+            `As ${currentUser.role}, you can only reassign to managers at your level or higher.`
+          );
+        }
+      }
     }
 
-    // Update the manager using DAO
     const updatedEmployee = await employeeDao.updateManager(employeeId, managerId);
-
-    // Clear cache
-    this.clearHierarchyCache();
 
     return updatedEmployee;
   }
-
-  /**
-   * Get employee statistics
-   */
   async getEmployeeStats(): Promise<{
     total: number;
     byDepartment: { [key: string]: number };

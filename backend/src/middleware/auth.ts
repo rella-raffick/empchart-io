@@ -1,36 +1,22 @@
 /**
  * Authentication Middleware
- *
- * Purpose: Protect routes by verifying JWT tokens
- *
- * Usage:
- * - Attach to routes that require authentication
- * - Extract token from Authorization header (Bearer <token>)
- * - Verify token and attach user info to request
- *
- * Example:
- * fastify.get('/protected', { preHandler: authMiddleware }, handler)
+ * Protects routes by verifying JWT tokens
  */
 
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyToken, JwtPayload } from '../utils/jwt';
 
-// Extend FastifyRequest to include user property
 declare module 'fastify' {
   interface FastifyRequest {
     user?: JwtPayload;
   }
 }
 
-/**
- * Middleware to verify JWT token and attach user to request
- */
 export async function authMiddleware(
   request: FastifyRequest,
   reply: FastifyReply
 ): Promise<void> {
   try {
-    // Extract token from Authorization header
     const authHeader = request.headers.authorization;
 
     if (!authHeader) {
@@ -50,11 +36,7 @@ export async function authMiddleware(
     }
 
     const token = parts[1];
-
-    // Verify token
     const decoded = verifyToken(token);
-
-    // Attach user info to request
     request.user = decoded;
   } catch (error) {
     return reply.status(401).send({

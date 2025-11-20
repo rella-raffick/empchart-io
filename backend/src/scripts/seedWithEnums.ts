@@ -6,11 +6,11 @@ async function seedDatabase() {
   try {
     console.log('Connecting to database...');
     await sequelize.authenticate();
-    console.log('✓ Database connection established');
+    console.log('Database connection established');
 
     console.log('\nSyncing database models...');
     await sequelize.sync({ force: true }); // WARNING: Drops all tables
-    console.log('✓ Database synced');
+    console.log('Database synced');
 
     console.log('\n========== Seeding Users ==========\n');
 
@@ -113,7 +113,7 @@ async function seedDatabase() {
         role: userData.role,
         isActive: true,
       });
-      console.log(`✓ User created: ${userData.email} (${userData.role}) - Password: ${userData.password}`);
+      console.log(`User created: ${userData.email} (${userData.role}) - Password: ${userData.password}`);
     }
 
     console.log('\n========================================');
@@ -138,7 +138,7 @@ async function seedDatabase() {
     console.log('========================================\n');
 
     console.log('\n========================================');
-    console.log('✓ Database seeded successfully!');
+    console.log('Database seeded successfully!');
     console.log('========================================');
     console.log('Summary:');
     console.log('- Users: 11 (all from PDF org chart)');
@@ -149,7 +149,7 @@ async function seedDatabase() {
 
     process.exit(0);
   } catch (error) {
-    console.error('❌ Error seeding database:', error);
+    console.error('Error seeding database:', error);
     process.exit(1);
   }
 }

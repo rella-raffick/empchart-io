@@ -1,4 +1,5 @@
 import { EmployeeLevel } from '../types/enums';
+import { UserRole } from '../models/User';
 
 /**
  * Level hierarchy map
@@ -15,6 +16,17 @@ export const LEVEL_HIERARCHY: Record<EmployeeLevel, number> = {
   L4: 4,
   L5: 5,
 };
+
+/**
+ * Convert UserRole to EmployeeLevel
+ * admin and ceo are treated as L1 for permission purposes
+ */
+export function roleToLevel(role: UserRole): EmployeeLevel {
+  if (role === 'admin' || role === 'ceo') {
+    return 'L1';
+  }
+  return role as EmployeeLevel;
+}
 
 /**
  * Level descriptions
@@ -104,16 +116,6 @@ export function validateLevelHierarchy(
 /**
  * Get all levels that a user can manage
  * A user can only manage employees with higher level numbers (lower in hierarchy)
- * 
- * @param userLevel - The level of the current user
- * @returns Array of levels that can be managed
- * 
- * @example
- * getManagedLevels('L1') // ['L2', 'L3', 'L4', 'L5']
- * getManagedLevels('L2') // ['L3', 'L4', 'L5']
- * getManagedLevels('L3') // ['L4', 'L5']
- * getManagedLevels('L4') // ['L5']
- * getManagedLevels('L5') // []
  */
 export function getManagedLevels(userLevel: EmployeeLevel): EmployeeLevel[] {
   const userLevelNum = LEVEL_HIERARCHY[userLevel];
@@ -130,27 +132,41 @@ export function getManagedLevels(userLevel: EmployeeLevel): EmployeeLevel[] {
 
 /**
  * Check if a user has permission to perform drag & drop for an employee
- * Rules:
- * - Same level cannot drag & drop each other (e.g., L1 CTO cannot drag L1 CEO)
- * - Must be able to manage the employee (lower level number = higher rank)
- * 
- * @param userLevel - The level of the current user performing the action
- * @param employeeLevel - The level of the employee being moved
- * @returns true if user can drag & drop this employee
- * 
- * @example
- * canDragAndDrop('L1', 'L1') // false - Same level cannot manage each other
- * canDragAndDrop('L1', 'L2') // true - L1 can manage L2
- * canDragAndDrop('L3', 'L4') // true - L3 can manage L4
- * canDragAndDrop('L3', 'L2') // false - L3 cannot manage L2 (higher rank)
- * canDragAndDrop('L3', 'L5') // true - L3 can manage L5
+ * L1 and L2 can manage anyone below them
+ * Other levels can only manage their subordinates
  */
 export function canDragAndDrop(userLevel: EmployeeLevel, employeeLevel: EmployeeLevel): boolean {
-  // Same level cannot drag & drop each other
-  if (userLevel === employeeLevel) {
+  if (userLevel === 'L1' || userLevel === 'L2') {
+    if (userLevel === 'L1' && employeeLevel === 'L1') {
+      return false;
+    }
+    return true;
+  }
+
+  return LEVEL_HIERARCHY[userLevel] < LEVEL_HIERARCHY[employeeLevel];
+}
+
+/**
+ * Check if a user can reassign an employee to a specific manager
+ * User must be able to drag the employee, new manager must be able to manage the employee,
+ * and new manager must be at user's level or below
+ */
+export function canReassignToManager(
+  userLevel: EmployeeLevel,
+  employeeLevel: EmployeeLevel,
+  newManagerLevel: EmployeeLevel
+): boolean {
+  if (!canDragAndDrop(userLevel, employeeLevel)) {
     return false;
   }
-  
-  // Must be able to manage the employee (user level must be lower number)
-  return canManage(userLevel, employeeLevel);
+
+  if (LEVEL_HIERARCHY[newManagerLevel] >= LEVEL_HIERARCHY[employeeLevel]) {
+    return false;
+  }
+
+  if (LEVEL_HIERARCHY[newManagerLevel] < LEVEL_HIERARCHY[userLevel]) {
+    return false;
+  }
+
+  return true;
 }

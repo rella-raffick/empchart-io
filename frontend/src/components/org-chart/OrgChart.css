@@ -1,0 +1,234 @@
+.org-chart-container {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  padding: 3rem;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background-image: radial-gradient(
+    hsl(var(--primary) / 0.1) 1px,
+    transparent 1px
+  );
+  background-size: 20px 20px;
+  background-position: center center;
+}
+
+/* Custom scrollbar matching theme */
+.org-chart-container::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.org-chart-container::-webkit-scrollbar-track {
+  background: hsl(var(--muted));
+  border-radius: 4px;
+}
+
+.org-chart-container::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.3);
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.org-chart-container::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.5);
+}
+
+.org-chart-wrapper {
+  display: inline-block;
+  min-width: min-content;
+  user-select: none;
+}
+
+.org-chart {
+  display: flex;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.org-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  padding: 0 1.5rem;
+}
+
+.node-content {
+  position: relative;
+  margin-bottom: 0;
+  animation: fadeSlideIn 0.5s ease-out;
+  z-index: 10;
+}
+
+/* Fade and slide in animation */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Vertical line from parent card down */
+.org-node > .node-content::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 2rem;
+  background: #6366f1;
+  z-index: 1;
+}
+
+/* Hide vertical line if no children */
+.org-node:not(:has(.node-children)) > .node-content::after {
+  display: none;
+}
+
+/* Horizontal line connecting siblings */
+.node-children::before {
+  content: "";
+  position: absolute;
+  top: -2rem;
+  height: 2px;
+  background: #6366f1;
+  z-index: 1;
+}
+
+/* Single child - no horizontal line */
+.node-children:has(> .org-node:only-child)::before {
+  display: none;
+}
+
+/* Multiple children - calculate based on first and last child position */
+/* The horizontal line connects from first child center to last child center */
+
+/* 2 children */
+.node-children:has(> .org-node:first-child:nth-last-child(2))::before {
+  left: calc(50% - (100% / 4));
+  right: calc(50% - (100% / 4));
+}
+
+/* 3 children */
+.node-children:has(> .org-node:first-child:nth-last-child(3))::before {
+  left: calc(50% - (100% / 3));
+  right: calc(50% - (100% / 3));
+}
+
+/* 4 children */
+.node-children:has(> .org-node:first-child:nth-last-child(4))::before {
+  left: calc(50% - (3 * 100% / 8));
+  right: calc(50% - (3 * 100% / 8));
+}
+
+/* 5 children */
+.node-children:has(> .org-node:first-child:nth-last-child(5))::before {
+  left: calc(50% - (2 * 100% / 5));
+  right: calc(50% - (2 * 100% / 5));
+}
+
+/* 6+ children */
+.node-children:has(> .org-node:first-child:nth-last-child(n+6))::before {
+  left: calc(50% - (5 * 100% / 12));
+  right: calc(50% - (5 * 100% / 12));
+}
+
+/* Vertical line dropping to each child - with arrow at bottom */
+.node-children > .org-node::before {
+  content: "";
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: calc(2rem - 10px);
+  background: #6366f1;
+  z-index: 1;
+}
+
+/* Arrow/Triangle pointing down to each child card */
+.node-children > .org-node::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 10px solid #6366f1;
+  z-index: 2;
+}
+
+/* Children container */
+.node-children {
+  display: flex;
+  justify-content: center;
+  gap: 0;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  margin-top: 4rem;
+  position: relative;
+}
+
+/* Level badge glow effect */
+.level-badge {
+  animation: subtlePulse 2s ease-in-out infinite;
+}
+
+@keyframes subtlePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.7);
+  }
+}
+
+/* Report badge hover effect */
+.report-badge {
+  transition: all 0.3s ease;
+}
+
+.employee-card:hover .report-badge {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px hsl(var(--primary) / 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .org-node {
+    padding: 0 1rem;
+  }
+
+  .node-content {
+    margin-bottom: 2rem;
+  }
+
+  .org-chart-container {
+    padding: 2rem 1rem;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .org-chart-container {
+    background-image: radial-gradient(
+      hsl(var(--primary) / 0.15) 1px,
+      transparent 1px
+    );
+  }
+}

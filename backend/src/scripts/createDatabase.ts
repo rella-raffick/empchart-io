@@ -1,41 +1,24 @@
-import { Sequelize } from "sequelize";
+import sequelize from "../config/database";
 import dotenv from "dotenv";
 
 dotenv.config();
 
 async function createDatabase() {
-  const sequelize = new Sequelize({
-    dialect: "postgres",
-    host: process.env.DB_HOST || "localhost",
-    port: parseInt(process.env.DB_PORT || "5432"),
-    username: process.env.DB_USER || "postgres",
-    password: process.env.DB_PASSWORD || "postgres",
-    database: "postgres", // Connect to default postgres database
-    logging: false,
-  });
-
   try {
     await sequelize.authenticate();
-    console.log("Connected to PostgreSQL server");
+    console.log("Connected to Supabase PostgreSQL database");
 
-    const dbName = process.env.DB_NAME || "empchartio_db";
-
-    // Check if database exists
-    const [results] = await sequelize.query(
-      `SELECT 1 FROM pg_database WHERE datname = '${dbName}'`
-    );
-
-    if (results.length === 0) {
-      // Create database
-      await sequelize.query(`CREATE DATABASE ${dbName}`);
-      console.log(`✓ Database '${dbName}' created successfully`);
-    } else {
-      console.log(`✓ Database '${dbName}' already exists`);
-    }
+    await sequelize.sync({ force: true });
+    console.log("All tables dropped and recreated with updated schema");
+    console.log("Database is ready");
 
     await sequelize.close();
   } catch (error) {
-    console.error("Error creating database:", error);
+    console.error("Error connecting to database:", error);
+    console.error("\nPlease check:");
+    console.error("1. SUPABASE_DB_URL is set correctly in .env");
+    console.error("2. Your database password is correct");
+    console.error("3. Your Supabase project is active");
     process.exit(1);
   }
 }

@@ -1,18 +1,27 @@
-/**
- * Designation Controller
- *
- * Purpose: Provide designation data for dropdowns
- */
-
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { Department } from '../types/enums';
-import { DESIGNATIONS, getDesignationsByDepartment } from '../constants/designations';
+import designationService from '../services/designationService';
+import departmentService from '../services/departmentService';
+import cacheManager from '../utils/cacheManager';
+
+const CACHE_NAME = "designations";
+const CACHE_TTL = 86400;
+cacheManager.getCache(CACHE_NAME, CACHE_TTL);
+
+function sendWithCache(
+  reply: FastifyReply,
+  data: any,
+  cacheHit: boolean
+) {
+  return reply
+    .header('X-Cache', cacheHit ? 'HIT' : 'MISS')
+    .send({
+      success: true,
+      data,
+    });
+}
 
 export class DesignationController {
-  /**
-   * Get all designations for a specific team/department
-   * GET /api/designations/:team
-   */
   async getDesignationsByTeam(
     request: FastifyRequest<{ Params: { team: string } }>,
     reply: FastifyReply
@@ -20,7 +29,6 @@ export class DesignationController {
     try {
       const { team } = request.params;
 
-      // Validate team
       const validTeams: Department[] = ['EXECUTIVE', 'TECHNOLOGY', 'FINANCE', 'BUSINESS'];
       if (!validTeams.includes(team as Department)) {
         return reply.status(400).send({
@@ -29,15 +37,20 @@ export class DesignationController {
         });
       }
 
-      const designations = getDesignationsByDepartment(team as Department);
+      // Get designations from cache or database
+      const result = await cacheManager.getOrSet(
+        CACHE_NAME,
+        `team_${team}`,
+        async () => {
+          const designations = await designationService.getDesignationsByDepartment(team as Department);
+          return {
+            team,
+            designations,
+          };
+        }
+      );
 
-      return reply.status(200).send({
-        success: true,
-        data: {
-          team,
-          designations,
-        },
-      });
+      return sendWithCache(reply, result.data, result.cacheHit);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch designations';
       return reply.status(500).send({
@@ -53,17 +66,14 @@ export class DesignationController {
    */
   async getAllTeams(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const teams = [
-        { value: 'EXECUTIVE', label: 'Executive' },
-        { value: 'TECHNOLOGY', label: 'Technology' },
-        { value: 'FINANCE', label: 'Finance' },
-        { value: 'BUSINESS', label: 'Business' },
-      ];
+      // Get departments from cache or database
+      const result = await cacheManager.getOrSet(
+        CACHE_NAME,
+        "all_teams",
+        () => departmentService.getAllDepartments()
+      );
 
-      return reply.status(200).send({
-        success: true,
-        data: teams,
-      });
+      return sendWithCache(reply, result.data, result.cacheHit);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch teams';
       return reply.status(500).send({
@@ -79,17 +89,14 @@ export class DesignationController {
    */
   async getAllDesignations(request: FastifyRequest, reply: FastifyReply) {
     try {
-      const grouped = {
-        EXECUTIVE: getDesignationsByDepartment('EXECUTIVE'),
-        TECHNOLOGY: getDesignationsByDepartment('TECHNOLOGY'),
-        FINANCE: getDesignationsByDepartment('FINANCE'),
-        BUSINESS: getDesignationsByDepartment('BUSINESS'),
-      };
+      // Get designations from cache or database
+      const result = await cacheManager.getOrSet(
+        CACHE_NAME,
+        "all_grouped",
+        () => designationService.getDesignationsGroupedByDepartment()
+      );
 
-      return reply.status(200).send({
-        success: true,
-        data: grouped,
-      });
+      return sendWithCache(reply, result.data, result.cacheHit);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to fetch designations';
       return reply.status(500).send({
