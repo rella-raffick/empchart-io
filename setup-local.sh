@@ -25,25 +25,25 @@ command_exists() {
 echo -e "${BLUE}Checking prerequisites...${NC}"
 
 if ! command_exists node; then
-    echo -e "${RED}❌ Node.js is not installed. Please install Node.js 20 or higher.${NC}"
+    echo -e "${RED}ERROR: Node.js is not installed. Please install Node.js 20 or higher.${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ Node.js installed: $(node --version)${NC}"
 
 if ! command_exists npm; then
-    echo -e "${RED}❌ npm is not installed.${NC}"
+    echo -e "${RED}ERROR: npm is not installed.${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ npm installed: $(npm --version)${NC}"
 
 if ! command_exists docker; then
-    echo -e "${RED}❌ Docker is not installed. Please install Docker.${NC}"
+    echo -e "${RED}ERROR: Docker is not installed. Please install Docker.${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ Docker installed: $(docker --version)${NC}"
 
 if ! command_exists docker-compose; then
-    echo -e "${RED}❌ docker-compose is not installed.${NC}"
+    echo -e "${RED}ERROR: docker-compose is not installed.${NC}"
     exit 1
 fi
 echo -e "${GREEN}✓ docker-compose installed: $(docker-compose --version)${NC}"
@@ -61,7 +61,7 @@ if [ ! -f "backend/.env" ]; then
     # Update for local Docker PostgreSQL
     sed -i.bak 's|SUPABASE_DB_URL=.*|# For local Docker PostgreSQL:\nDATABASE_URL=postgresql://postgres:postgres@localhost:5432/happy_fox_db|' backend/.env
 
-    echo -e "${YELLOW}⚠️  IMPORTANT: Update backend/.env with your configuration:${NC}"
+    echo -e "${YELLOW}IMPORTANT: Update backend/.env with your configuration:${NC}"
     echo -e "   - Set JWT_SECRET to a strong random value"
     echo -e "   - If using Supabase, update SUPABASE_* values"
     echo -e "   - If using local Docker, DATABASE_URL is already set"
@@ -82,21 +82,6 @@ EOF
     echo -e "${GREEN}✓ frontend/.env created${NC}"
 else
     echo -e "${GREEN}✓ frontend/.env already exists${NC}"
-fi
-
-# Deployment .env
-if [ ! -f "deployment/.env" ]; then
-    echo -e "${YELLOW}Creating deployment/.env for Docker PostgreSQL...${NC}"
-    cat > deployment/.env << 'EOF'
-# PostgreSQL Configuration
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=happy_fox_db
-POSTGRES_PORT=5432
-EOF
-    echo -e "${GREEN}✓ deployment/.env created${NC}"
-else
-    echo -e "${GREEN}✓ deployment/.env already exists${NC}"
 fi
 
 echo ""
@@ -122,7 +107,6 @@ echo ""
 
 # Step 3: Start PostgreSQL
 echo -e "${BLUE}Step 3: Starting PostgreSQL with Docker...${NC}"
-cd deployment
 docker-compose up -d postgres
 echo -e "${YELLOW}Waiting for PostgreSQL to be ready...${NC}"
 sleep 5
@@ -134,12 +118,11 @@ for i in {1..30}; do
         break
     fi
     if [ $i -eq 30 ]; then
-        echo -e "${RED}❌ PostgreSQL failed to start${NC}"
+        echo -e "${RED}ERROR: PostgreSQL failed to start${NC}"
         exit 1
     fi
     sleep 1
 done
-cd ..
 
 echo ""
 
@@ -173,7 +156,7 @@ echo ""
 
 # Final instructions
 echo -e "${GREEN}========================================${NC}"
-echo -e "${GREEN}   Setup Complete! 🎉                  ${NC}"
+echo -e "${GREEN}   Setup Complete!                     ${NC}"
 echo -e "${GREEN}========================================${NC}\n"
 
 echo -e "${BLUE}Next steps:${NC}"

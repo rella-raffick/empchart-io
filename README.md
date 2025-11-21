@@ -20,26 +20,6 @@ A full-stack application for visualizing and managing organizational hierarchies
 
 ---
 
-## Features
-
-### Core Features
-- **Interactive Organization Chart** - Visual hierarchy with React Flow
-- **Drag & Drop Reorganization** - Real-time employee reassignment
-- **Role-Based Access Control (RBAC)** - 5-level permission system
-- **Dual View Modes** - "All Employees" and "My Reporting Line"
-- **Theme Support** - Dark/Light mode with persistence
-- **Responsive Design** - Works on desktop and mobile
-
-### Technical Features
-- **Real-time Updates** - Instant hierarchy changes
-- **JWT Authentication** - Secure token-based auth
-- **Multi-step Registration** - Department and designation selection
-- **Analytics Dashboard** - Employee and department statistics
-- **Profile Image Upload** - Base64 image storage
-- **Input Validation** - Client and server-side validation
-
----
-
 ## Tech Stack
 
 ### Frontend
@@ -117,10 +97,7 @@ cd empchartio
 
 #### 2. Setup Database (Docker PostgreSQL)
 ```bash
-cd deployment
-cp .env.example .env  # Edit if needed
 docker-compose up -d postgres
-cd ..
 ```
 
 #### 3. Setup Backend
@@ -224,14 +201,13 @@ empchartio/
 │   ├── vite.config.ts
 │   └── tailwind.config.js
 │
-├── deployment/                 # Deployment configurations
-│   ├── docker-compose.yml     # PostgreSQL container
-│   ├── backend/               # EC2 deployment scripts
-│   │   ├── deploy-ec2.sh
-│   │   ├── setup-nginx-ssl.sh
-│   │   └── docker-compose.yml
-│   └── .env.example
+├── deployment/                 # EC2 deployment configurations
+│   └── backend/               # EC2 deployment scripts
+│       ├── deploy-ec2.sh
+│       ├── setup-nginx-ssl.sh
+│       └── docker-compose.yml
 │
+├── docker-compose.yml                      # PostgreSQL container
 ├── setup-local.sh                          # Automated local setup
 ├── start-backend.sh                        # Start backend server
 ├── start-frontend.sh                       # Start frontend server
@@ -292,7 +268,6 @@ npm run lint         # Run ESLint
 
 #### View PostgreSQL Logs
 ```bash
-cd deployment
 docker-compose logs -f postgres
 ```
 
@@ -310,13 +285,11 @@ npm run db:seed    # Re-seeds data
 
 #### Stop PostgreSQL
 ```bash
-cd deployment
 docker-compose down
 ```
 
 #### Remove PostgreSQL Data (Complete Reset)
 ```bash
-cd deployment
 docker-compose down -v  # Removes volumes
 docker-compose up -d postgres
 ```
@@ -336,7 +309,6 @@ docker-compose up -d postgres
 **Setup:**
 ```bash
 # Already configured by setup-local.sh
-cd deployment
 docker-compose up -d postgres
 ```
 
@@ -375,7 +347,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/happy_fox_db
 
 4. Stop local PostgreSQL:
    ```bash
-   cd deployment && docker-compose down
+   docker-compose down
    ```
 
 5. Run database setup:
@@ -390,7 +362,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/happy_fox_db
 **To Docker:**
 ```bash
 # Start Docker PostgreSQL
-cd deployment && docker-compose up -d postgres
+docker-compose up -d postgres
 
 # Update backend/.env
 DATABASE_URL=postgresql://postgres:postgres@localhost:5432/happy_fox_db
@@ -400,7 +372,7 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/happy_fox_db
 **To Supabase:**
 ```bash
 # Stop Docker PostgreSQL
-cd deployment && docker-compose down
+docker-compose down
 
 # Update backend/.env
 # Comment out DATABASE_URL
@@ -480,10 +452,3 @@ VITE_API_BASE_URL=http://localhost:3000
 NODE_ENV=development
 ```
 
-#### Docker PostgreSQL (`deployment/.env`)
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=happy_fox_db
-POSTGRES_PORT=5432
-```

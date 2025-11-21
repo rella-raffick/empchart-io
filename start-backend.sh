@@ -18,7 +18,6 @@ echo -e "${BLUE}========================================${NC}\n"
 
 # Check if PostgreSQL is running
 echo -e "${BLUE}Checking PostgreSQL...${NC}"
-cd deployment
 if ! docker-compose ps postgres | grep -q "Up"; then
     echo -e "${YELLOW}PostgreSQL is not running. Starting...${NC}"
     docker-compose up -d postgres
@@ -39,7 +38,6 @@ if ! docker-compose ps postgres | grep -q "Up"; then
 else
     echo -e "${GREEN}PostgreSQL is already running${NC}"
 fi
-cd ..
 
 echo ""
 
